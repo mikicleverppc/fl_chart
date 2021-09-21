@@ -59,6 +59,7 @@ class BarChartData extends AxisChartData with EquatableMixin {
     FlBorderData? borderData,
     RangeAnnotations? rangeAnnotations,
     Color? backgroundColor,
+    FlTargetLine? targetLine,
   })  : barGroups = barGroups ?? const [],
         groupsSpace = groupsSpace ?? 16,
         alignment = alignment ?? BarChartAlignment.spaceEvenly,
@@ -79,6 +80,7 @@ class BarChartData extends AxisChartData with EquatableMixin {
           minY: minY ??
               BarChartHelper.calculateMaxAxisValues(barGroups ?? []).minY,
           baselineY: baselineY,
+          targetLine: targetLine,
         );
 
   /// Copies current [BarChartData] to a new [BarChartData],
@@ -97,6 +99,7 @@ class BarChartData extends AxisChartData with EquatableMixin {
     double? minY,
     double? baselineY,
     Color? backgroundColor,
+    FlTargetLine? targetLine,
   }) {
     return BarChartData(
       barGroups: barGroups ?? this.barGroups,
@@ -110,8 +113,9 @@ class BarChartData extends AxisChartData with EquatableMixin {
       borderData: borderData ?? this.borderData,
       maxY: maxY ?? this.maxY,
       minY: minY ?? this.minY,
-      baselineY: baselineY ?? this.baselineY,
       backgroundColor: backgroundColor ?? this.backgroundColor,
+      baselineY: baselineY ?? this.baselineY,
+      targetLine: targetLine ?? this.targetLine,
     );
   }
 
@@ -135,6 +139,7 @@ class BarChartData extends AxisChartData with EquatableMixin {
         minY: lerpDouble(a.minY, b.minY, t),
         baselineY: lerpDouble(a.baselineY, b.baselineY, t),
         backgroundColor: Color.lerp(a.backgroundColor, b.backgroundColor, t),
+        targetLine: b.targetLine,
       );
     } else {
       throw Exception('Illegal State');

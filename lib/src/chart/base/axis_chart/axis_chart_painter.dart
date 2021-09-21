@@ -39,6 +39,7 @@ abstract class AxisChartPainter<D extends AxisChartData>
     drawBackground(canvasWrapper, holder);
     drawRangeAnnotation(canvasWrapper, holder);
     drawGrid(canvasWrapper, holder);
+    _drawTargetLine(canvasWrapper, holder);
   }
 
   /// Draws an axis titles in each side (left, top, right, bottom).
@@ -366,6 +367,33 @@ abstract class AxisChartPainter<D extends AxisChartData>
         canvasWrapper.drawRect(rect, _rangeAnnotationPaint);
       }
     }
+  }
+
+  void _drawTargetLine(CanvasWrapper canvasWrapper, PaintHolder<D> holder) {
+    final data = holder.data;
+    if (data.targetLine == null) {
+      return;
+    }
+    var flLineStyle = data.targetLine!.flLineStyle;
+
+    final _linePaint = Paint()
+      ..color = flLineStyle.color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = flLineStyle.strokeWidth;
+
+    final drawSize = getChartUsableDrawSize(canvasWrapper.size, holder);
+    canvasWrapper.save();
+    canvasWrapper.translate(
+        0.0, getPixelY(data.targetLine!.dy, drawSize, holder));
+
+    final _path = Path()..lineTo(drawSize.width, 0.0);
+
+    canvasWrapper.drawPath(
+      _path,
+      _linePaint,
+    );
+
+    canvasWrapper.restore();
   }
 
   /// With this function we can convert our [FlSpot] x

@@ -18,6 +18,7 @@ abstract class AxisChartData extends BaseChartData with EquatableMixin {
   final FlGridData gridData;
   final FlAxisTitleData axisTitleData;
   final RangeAnnotations rangeAnnotations;
+  final FlTargetLine? targetLine;
 
   double minX, maxX, baselineX;
   double minY, maxY, baselineY;
@@ -48,6 +49,7 @@ abstract class AxisChartData extends BaseChartData with EquatableMixin {
     Color? backgroundColor,
     FlBorderData? borderData,
     required FlTouchData touchData,
+    FlTargetLine? targetLine,
   })  : gridData = gridData ?? FlGridData(),
         axisTitleData = axisTitleData,
         rangeAnnotations = rangeAnnotations ?? RangeAnnotations(),
@@ -59,6 +61,7 @@ abstract class AxisChartData extends BaseChartData with EquatableMixin {
         baselineY = baselineY ?? 0,
         clipData = clipData ?? FlClipData.none(),
         backgroundColor = backgroundColor ?? Colors.transparent,
+        targetLine = targetLine,
         super(borderData: borderData, touchData: touchData);
 
   /// Used for equality check, see [EquatableMixin].
@@ -720,6 +723,18 @@ class FlLine with EquatableMixin {
         strokeWidth,
         dashArray,
       ];
+}
+
+class FlTargetLine with EquatableMixin {
+  final FlLine flLineStyle;
+  final double dy;
+
+  FlTargetLine({
+    FlLine? flLineStyle,
+    this.dy = 0.0,
+  }) : flLineStyle = flLineStyle ?? FlLine();
+  @override
+  List<Object?> get props => [flLineStyle, dy];
 }
 
 /// holds information about touched spot on the axis based charts.
