@@ -32,17 +32,11 @@ class BaseChartPainter<D extends BaseChartData> {
     }
 
     final viewSize = canvasWrapper.size;
-    final chartViewSize = getChartUsableDrawSize(viewSize, holder);
 
-    final topLeft =
-        Offset(getLeftOffsetDrawSize(holder), getTopOffsetDrawSize(holder));
-    final topRight = Offset(getLeftOffsetDrawSize(holder) + chartViewSize.width,
-        getTopOffsetDrawSize(holder));
-    final bottomLeft = Offset(getLeftOffsetDrawSize(holder),
-        getTopOffsetDrawSize(holder) + chartViewSize.height);
-    final bottomRight = Offset(
-        getLeftOffsetDrawSize(holder) + chartViewSize.width,
-        getTopOffsetDrawSize(holder) + chartViewSize.height);
+    const topLeft = Offset(0, 0);
+    final topRight = Offset(viewSize.width, 0);
+    final bottomLeft = Offset(0, viewSize.height);
+    final bottomRight = Offset(viewSize.width, viewSize.height);
 
     /// Draw Top Line
     final topBorder = borderData.border.top;
@@ -80,35 +74,6 @@ class BaseChartPainter<D extends BaseChartData> {
       canvasWrapper.drawLine(bottomLeft, topLeft, _borderPaint);
     }
   }
-
-  /// Calculate the size that we can draw our chart's main content.
-  /// [getExtraNeededHorizontalSpace] and [getExtraNeededVerticalSpace]
-  /// is the needed space to draw horizontal and vertical
-  /// stuff around our chart.
-  /// then we subtract them from raw [viewSize]
-  Size getChartUsableDrawSize(Size viewSize, PaintHolder<D> holder) {
-    final usableWidth = viewSize.width - getExtraNeededHorizontalSpace(holder);
-    final usableHeight = viewSize.height - getExtraNeededVerticalSpace(holder);
-    return Size(usableWidth, usableHeight);
-  }
-
-  /// Extra space needed to show horizontal contents around the chart,
-  /// like: left, right padding, left, right titles, and so on,
-  double getExtraNeededHorizontalSpace(PaintHolder<D> holder) => 0;
-
-  /// Extra space needed to show vertical contents around the chart,
-  /// like: top, bottom padding, top, bottom titles, and so on,
-  double getExtraNeededVerticalSpace(PaintHolder<D> holder) => 0;
-
-  /// Left offset to draw the chart's main content
-  /// we should use this to offset our x axis when we drawing the chart,
-  /// and the width space we can use to draw chart is[getChartUsableDrawSize.width]
-  double getLeftOffsetDrawSize(PaintHolder<D> holder) => 0;
-
-  /// Top offset to draw the chart's main content
-  /// we should use this to offset our y axis when we drawing the chart,
-  /// and the height space we can use to draw chart is[getChartUsableDrawSize.height]
-  double getTopOffsetDrawSize(PaintHolder<D> holder) => 0;
 }
 
 /// Holds data for painting on canvas

@@ -21,6 +21,42 @@ class _LineChartSample3State extends State<LineChartSample3> {
     super.initState();
   }
 
+  Widget leftTitleWidgets(double value, TitleMeta meta) {
+    const style = TextStyle(color: Colors.black, fontSize: 10);
+    String text;
+    switch (value.toInt()) {
+      case 0:
+        text = '';
+        break;
+      case 1:
+        text = '1k calories';
+        break;
+      case 2:
+        text = '2k calories';
+        break;
+      case 3:
+        text = '3k calories';
+        break;
+      default:
+        return Container();
+    }
+
+    return Padding(
+      child: Text(text, style: style, textAlign: TextAlign.center),
+      padding: const EdgeInsets.only(right: 6),
+    );
+  }
+
+  Widget bottomTitleWidgets(double value, TitleMeta meta) {
+    final isTouched = value == touchedValue;
+    final style = TextStyle(
+      color: isTouched ? Colors.deepOrange : Colors.deepOrange.withOpacity(0.5),
+      fontWeight: FontWeight.bold,
+    );
+
+    return Text(widget.weekDays[value.toInt()], style: style);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -101,6 +137,18 @@ class _LineChartSample3State extends State<LineChartSample3> {
                             return null;
                           }
 
+                          TextAlign textAlign;
+                          switch (flSpot.x.toInt()) {
+                            case 1:
+                              textAlign = TextAlign.left;
+                              break;
+                            case 5:
+                              textAlign = TextAlign.right;
+                              break;
+                            default:
+                              textAlign = TextAlign.center;
+                          }
+
                           return LineTooltipItem(
                             '${widget.weekDays[flSpot.x.toInt()]} \n',
                             const TextStyle(
@@ -129,6 +177,7 @@ class _LineChartSample3State extends State<LineChartSample3> {
                                 ),
                               ),
                             ],
+                            textAlign: textAlign,
                           );
                         }).toList();
                       }),
@@ -171,18 +220,18 @@ class _LineChartSample3State extends State<LineChartSample3> {
                   }).toList(),
                   isCurved: false,
                   barWidth: 4,
-                  colors: [
-                    Colors.orange,
-                  ],
+                  color: Colors.orange,
                   belowBarData: BarAreaData(
                     show: true,
-                    colors: [
-                      Colors.orange.withOpacity(0.5),
-                      Colors.orange.withOpacity(0.0),
-                    ],
-                    gradientColorStops: [0.5, 1.0],
-                    gradientFrom: const Offset(0, 0),
-                    gradientTo: const Offset(0, 1),
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.orange.withOpacity(0.5),
+                        Colors.orange.withOpacity(0.0),
+                      ],
+                      stops: const [0.5, 1.0],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
                     spotsLine: BarAreaSpotsLine(
                       show: true,
                       flLineStyle: FlLine(
@@ -255,43 +304,25 @@ class _LineChartSample3State extends State<LineChartSample3> {
               ),
               titlesData: FlTitlesData(
                 show: true,
-                topTitles: SideTitles(showTitles: false),
-                rightTitles: SideTitles(showTitles: false),
-                leftTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 40,
-                  getTitles: (value) {
-                    switch (value.toInt()) {
-                      case 0:
-                        return '';
-                      case 1:
-                        return '1k calories';
-                      case 2:
-                        return '2k calories';
-                      case 3:
-                        return '3k calories';
-                    }
-
-                    return '';
-                  },
-                  getTextStyles: (context, value) =>
-                      const TextStyle(color: Colors.black, fontSize: 10),
+                topTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
                 ),
-                bottomTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 40,
-                  getTitles: (value) {
-                    return widget.weekDays[value.toInt()];
-                  },
-                  getTextStyles: (context, value) {
-                    final isTouched = value == touchedValue;
-                    return TextStyle(
-                      color: isTouched
-                          ? Colors.deepOrange
-                          : Colors.deepOrange.withOpacity(0.5),
-                      fontWeight: FontWeight.bold,
-                    );
-                  },
+                rightTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 46,
+                    getTitlesWidget: leftTitleWidgets,
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 40,
+                    getTitlesWidget: bottomTitleWidgets,
+                  ),
                 ),
               ),
             ),

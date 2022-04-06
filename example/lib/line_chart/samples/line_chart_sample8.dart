@@ -65,6 +65,47 @@ class _LineChartSample8State extends State<LineChartSample8> {
         });
   }
 
+  Widget bottomTitleWidgets(double value, TitleMeta meta) {
+    const style = TextStyle(color: Colors.black87, fontSize: 10);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: Text(meta.formattedValue, style: style),
+    );
+  }
+
+  Widget leftTitleWidgets(double value, TitleMeta meta) {
+    IconData icon;
+    Color color;
+    switch (value.toInt()) {
+      case 0:
+        icon = Icons.wb_sunny;
+        color = const Color(0xFFffab01);
+        break;
+      case 2:
+        icon = Icons.wine_bar_sharp;
+        color = const Color(0xFFff0000);
+        break;
+      case 4:
+        icon = Icons.watch_later;
+        color = Colors.green;
+        break;
+      case 6:
+        icon = Icons.whatshot;
+        color = Colors.deepOrangeAccent;
+        break;
+      default:
+        throw StateError("Invalid");
+    }
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
+      child: Icon(
+        icon,
+        color: color,
+        size: 32,
+      ),
+    );
+  }
+
   LineChartData mainData(SizedPicture sizedPicture) {
     return LineChartData(
       rangeAnnotations: RangeAnnotations(
@@ -134,28 +175,29 @@ class _LineChartSample8State extends State<LineChartSample8> {
           verticalInterval: 1),
       titlesData: FlTitlesData(
         show: true,
-        bottomTitles: SideTitles(
-          showTitles: true,
-          reservedSize: 22,
-          getTextStyles: (context, value) =>
-              const TextStyle(color: Colors.black87, fontSize: 10),
-          interval: 4,
-          margin: 8,
-          checkToShowTitle:
-              (minValue, maxValue, sideTitles, appliedInterval, value) => true,
-        ),
-        leftTitles: SideTitles(
-          interval: 2,
-          showTitles: true,
-          getTextStyles: (context, value) => const TextStyle(
-            color: Colors.black87,
-            fontSize: 10,
+        bottomTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 30,
+            getTitlesWidget: bottomTitleWidgets,
+            interval: 4,
           ),
-          reservedSize: 28,
-          margin: 12,
         ),
-        rightTitles: SideTitles(showTitles: false),
-        topTitles: SideTitles(showTitles: false),
+        leftTitles: AxisTitles(
+          drawBehindEverything: true,
+          sideTitles: SideTitles(
+            interval: 2,
+            showTitles: true,
+            getTitlesWidget: leftTitleWidgets,
+            reservedSize: 40,
+          ),
+        ),
+        rightTitles: AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
+        topTitles: AxisTitles(
+          sideTitles: SideTitles(showTitles: false),
+        ),
       ),
       lineTouchData: LineTouchData(
         getTouchLineEnd: (data, index) => double.infinity,
@@ -197,7 +239,11 @@ class _LineChartSample8State extends State<LineChartSample8> {
           ],
           dashArray: [2, 4],
           isCurved: true,
-          colors: const [Color(0xff0F2BF6), Color(0xff0F2BF6)],
+          gradient: const LinearGradient(
+            colors: [Color(0xff0F2BF6), Color(0xff0F2BF6)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
           barWidth: 2,
           isStrokeCapRound: true,
           dotData: FlDotData(
@@ -205,8 +251,13 @@ class _LineChartSample8State extends State<LineChartSample8> {
           ),
           belowBarData: BarAreaData(
             show: false,
-            colors:
-                gradientColors.map((color) => color.withOpacity(0.5)).toList(),
+            gradient: LinearGradient(
+              colors: gradientColors
+                  .map((color) => color.withOpacity(0.5))
+                  .toList(),
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
           ),
         ),
       ],

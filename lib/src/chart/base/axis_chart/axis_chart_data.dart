@@ -16,7 +16,7 @@ import 'package:flutter/material.dart';
 /// each child have to set it in their constructor.
 abstract class AxisChartData extends BaseChartData with EquatableMixin {
   final FlGridData gridData;
-  final FlAxisTitleData axisTitleData;
+  final FlTitlesData titlesData;
   final RangeAnnotations rangeAnnotations;
   final FlTargetLine? targetLine;
 
@@ -37,7 +37,7 @@ abstract class AxisChartData extends BaseChartData with EquatableMixin {
 
   AxisChartData({
     FlGridData? gridData,
-    required FlAxisTitleData axisTitleData,
+    required FlTitlesData titlesData,
     RangeAnnotations? rangeAnnotations,
     required double minX,
     required double maxX,
@@ -51,7 +51,7 @@ abstract class AxisChartData extends BaseChartData with EquatableMixin {
     required FlTouchData touchData,
     FlTargetLine? targetLine,
   })  : gridData = gridData ?? FlGridData(),
-        axisTitleData = axisTitleData,
+        titlesData = titlesData,
         rangeAnnotations = rangeAnnotations ?? RangeAnnotations(),
         minX = minX,
         maxX = maxX,
@@ -68,7 +68,7 @@ abstract class AxisChartData extends BaseChartData with EquatableMixin {
   @override
   List<Object?> get props => [
         gridData,
-        axisTitleData,
+        titlesData,
         rangeAnnotations,
         minX,
         maxX,
@@ -83,194 +83,216 @@ abstract class AxisChartData extends BaseChartData with EquatableMixin {
       ];
 }
 
-/// Holds data for showing a title in each side (left, top, right, bottom) of the chart.
-class FlAxisTitleData with EquatableMixin {
-  final bool show;
+/// Holds data for showing label values on axis numbers
+class SideTitles with EquatableMixin {
+  /// Determines showing or hiding this side titles
+  final bool showTitles;
 
-  final AxisTitle leftTitle, topTitle, rightTitle, bottomTitle;
+  /// You can override it to pass your custom widget to show in each axis value
+  final GetTitleWidgetFunction getTitlesWidget;
 
-  /// [show] determines showing or hiding all titles,
-  /// [leftTitle], [topTitle], [rightTitle], [bottomTitle] determines
-  /// title for left, top, right, bottom axis sides respectively.
-  FlAxisTitleData({
-    bool? show,
-    AxisTitle? leftTitle,
-    AxisTitle? topTitle,
-    AxisTitle? rightTitle,
-    AxisTitle? bottomTitle,
-  })  : show = show ?? true,
-        leftTitle = leftTitle ?? AxisTitle(reservedSize: 16),
-        topTitle = topTitle ?? AxisTitle(reservedSize: 16),
-        rightTitle = rightTitle ?? AxisTitle(reservedSize: 16),
-        bottomTitle = bottomTitle ?? AxisTitle(reservedSize: 16);
-
-  /// Lerps a [FlAxisTitleData] based on [t] value, check [Tween.lerp].
-  static FlAxisTitleData lerp(FlAxisTitleData a, FlAxisTitleData b, double t) {
-    return FlAxisTitleData(
-      show: b.show,
-      leftTitle: AxisTitle.lerp(a.leftTitle, b.leftTitle, t),
-      rightTitle: AxisTitle.lerp(a.rightTitle, b.rightTitle, t),
-      bottomTitle: AxisTitle.lerp(a.bottomTitle, b.bottomTitle, t),
-      topTitle: AxisTitle.lerp(a.topTitle, b.topTitle, t),
-    );
-  }
-
-  /// Copies current [FlAxisTitleData] to a new [FlAxisTitleData],
-  /// and replaces provided values.
-  FlAxisTitleData copyWith({
-    bool? show,
-    AxisTitle? leftTitle,
-    AxisTitle? topTitle,
-    AxisTitle? rightTitle,
-    AxisTitle? bottomTitle,
-  }) {
-    return FlAxisTitleData(
-      show: show ?? this.show,
-      leftTitle: leftTitle ?? this.leftTitle,
-      topTitle: topTitle ?? this.topTitle,
-      rightTitle: rightTitle ?? this.rightTitle,
-      bottomTitle: bottomTitle ?? this.bottomTitle,
-    );
-  }
-
-  /// Used for equality check, see [EquatableMixin].
-  @override
-  List<Object?> get props => [
-        show,
-        leftTitle,
-        topTitle,
-        rightTitle,
-        bottomTitle,
-      ];
-}
-
-/// Holds data for showing title of each side of charts.
-class AxisTitle with EquatableMixin {
-  /// You can show or hide it using [showTitle],
-  final bool showTitle;
-
-  /// Determines the showing text.
-  final String titleText;
-
-  /// Defines how much space it needed to draw.
+  /// It determines the maximum space that your titles need,
+  /// (All titles will stretch using this value)
   final double reservedSize;
 
-  /// Determines the style of this title, if it is null, we try to read TextStyle from theme.
-  final TextStyle? textStyle;
+  /// Texts are showing with provided [interval]. If you don't provide anything,
+  /// we try to find a suitable value to set as [interval] under the hood.
+  final double? interval;
 
-  /// Determines alignment of this title.
-  final TextAlign textAlign;
-
-  /// Determines direction of this title
-  final TextDirection textDirection;
-
-  /// Determines margin of this title.
-  final double margin;
-
-  /// You can show or hide it using [showTitle],
-  /// [titleText] determines the text, and
-  /// [textStyle] determines the style of this.
-  /// [textAlign] determines alignment of this title,
-  /// [textDirection] determines direction of this title.
-  /// [BaseChartPainter] uses [reservedSize] for assigning
-  /// a space for drawing this side title, it used for
-  /// some calculations.
-  /// [margin] determines margin of this title.
-  AxisTitle({
-    bool? showTitle,
-    String? titleText,
+  /// It draws some title on an axis, per axis values,
+  /// [showTitles] determines showing or hiding this side,
+  ///
+  /// Texts are depend on the axis value, you can override [getTitles],
+  /// it gives you an axis value (double value) and a [TitleMeta] which contains
+  /// additional information about the axis.
+  /// Then you should return a [Widget] to show.
+  /// It allows you to do anything you want, For example you can show icons
+  /// instead of texts, because it accepts a [Widget]
+  ///
+  /// [reservedSize] determines the maximum space that your titles need,
+  /// (All titles will stretch using this value)
+  ///
+  /// Texts are showing with provided [interval]. If you don't provide anything,
+  /// we try to find a suitable value to set as [interval] under the hood.
+  SideTitles({
+    bool? showTitles,
+    GetTitleWidgetFunction? getTitlesWidget,
     double? reservedSize,
-    TextStyle? textStyle,
-    TextDirection? textDirection,
-    TextAlign? textAlign,
-    double? margin,
-  })  : showTitle = showTitle ?? false,
-        titleText = titleText ?? '',
-        reservedSize = reservedSize ?? 14,
-        textStyle = textStyle,
-        textDirection = textDirection ?? TextDirection.ltr,
-        textAlign = textAlign ?? TextAlign.center,
-        margin = margin ?? 4;
+    double? interval,
+  })  : showTitles = showTitles ?? false,
+        getTitlesWidget = getTitlesWidget ?? defaultGetTitle,
+        reservedSize = reservedSize ?? 22,
+        interval = interval {
+    if (interval == 0) {
+      throw ArgumentError("SideTitles.interval couldn't be zero");
+    }
+  }
 
-  /// Lerps an [AxisTitle] based on [t] value, check [Tween.lerp].
-  static AxisTitle lerp(AxisTitle a, AxisTitle b, double t) {
-    return AxisTitle(
-      showTitle: b.showTitle,
-      titleText: b.titleText,
+  /// Lerps a [SideTitles] based on [t] value, check [Tween.lerp].
+  static SideTitles lerp(SideTitles a, SideTitles b, double t) {
+    return SideTitles(
+      showTitles: b.showTitles,
+      getTitlesWidget: b.getTitlesWidget,
       reservedSize: lerpDouble(a.reservedSize, b.reservedSize, t),
-      textStyle: TextStyle.lerp(a.textStyle, b.textStyle, t),
-      textDirection: b.textDirection,
-      textAlign: b.textAlign,
-      margin: lerpDouble(a.margin, b.margin, t),
+      interval: lerpDouble(a.interval, b.interval, t),
     );
   }
 
-  /// Copies current [AxisTitle] to a new [AxisTitle],
+  /// Copies current [SideTitles] to a new [SideTitles],
   /// and replaces provided values.
-  AxisTitle copyWith({
-    bool? showTitle,
-    String? titleText,
+  SideTitles copyWith({
+    bool? showTitles,
+    GetTitleWidgetFunction? getTitlesWidget,
     double? reservedSize,
-    TextStyle? textStyle,
-    TextDirection? textDirection,
-    TextAlign? textAlign,
-    double? margin,
+    double? interval,
   }) {
-    return AxisTitle(
-      showTitle: showTitle ?? this.showTitle,
-      titleText: titleText ?? this.titleText,
+    return SideTitles(
+      showTitles: showTitles ?? this.showTitles,
+      getTitlesWidget: getTitlesWidget ?? this.getTitlesWidget,
       reservedSize: reservedSize ?? this.reservedSize,
-      textStyle: textStyle ?? this.textStyle,
-      textDirection: textDirection ?? this.textDirection,
-      textAlign: textAlign ?? this.textAlign,
-      margin: margin ?? this.margin,
+      interval: interval ?? this.interval,
     );
   }
 
   /// Used for equality check, see [EquatableMixin].
   @override
   List<Object?> get props => [
-        showTitle,
-        titleText,
+        showTitles,
+        getTitlesWidget,
         reservedSize,
-        textStyle,
-        textAlign,
-        margin,
+        interval,
       ];
 }
 
-/// Holds data for showing titles on each side of charts (a title per each axis value).
+/// Holds data for showing each side titles (left, top, right, bottom)
+class AxisTitles with EquatableMixin {
+  /// Determines the size of [axisName]
+  final double axisNameSize;
+
+  /// It shows the name of axis, for example your x-axis shows year,
+  /// then you might want to show it using [axisNameWidget] property as a widget
+  final Widget? axisNameWidget;
+
+  /// It is responsible to show your axis side labels.
+  final SideTitles sideTitles;
+
+  /// If titles are showing on top of your tooltip, you can draw them below everything.
+  ///
+  /// In the future, we will convert tooltips to a widget, that would solve this problem.
+  final bool drawBelowEverything;
+
+  /// If there is something to show as axisTitles, it returns true
+  bool get showAxisTitles => axisNameWidget != null && axisNameSize != 0;
+
+  /// If there is something to show as sideTitles, it returns true
+  bool get showSideTitles =>
+      sideTitles.showTitles && sideTitles.reservedSize != 0;
+
+  /// you can provide [axisName] if you want to show a general
+  /// label on this axis,
+  ///
+  /// [axisNameSize] determines the maximum size that [axisName] can use
+  ///
+  /// [sideTitles] property is responsible to show your axis side labels
+  AxisTitles({
+    Widget? axisNameWidget,
+    double? axisNameSize,
+    SideTitles? sideTitles,
+    bool? drawBehindEverything,
+  })  : axisNameWidget = axisNameWidget,
+        axisNameSize = axisNameSize ?? 16,
+        sideTitles = sideTitles ?? SideTitles(),
+        drawBelowEverything = drawBehindEverything ?? false;
+
+  /// Lerps a [AxisTitles] based on [t] value, check [Tween.lerp].
+  static AxisTitles lerp(AxisTitles a, AxisTitles b, double t) {
+    return AxisTitles(
+      axisNameWidget: b.axisNameWidget,
+      axisNameSize: lerpDouble(a.axisNameSize, b.axisNameSize, t),
+      sideTitles: SideTitles.lerp(a.sideTitles, b.sideTitles, t),
+      drawBehindEverything: b.drawBelowEverything,
+    );
+  }
+
+  /// Copies current [SideTitles] to a new [SideTitles],
+  /// and replaces provided values.
+  AxisTitles copyWith({
+    Widget? axisNameWidget,
+    double? axisNameSize,
+    SideTitles? sideTitles,
+    bool? drawBelowEverything,
+  }) {
+    return AxisTitles(
+      axisNameWidget: axisNameWidget ?? this.axisNameWidget,
+      axisNameSize: axisNameSize ?? this.axisNameSize,
+      sideTitles: sideTitles ?? this.sideTitles,
+      drawBehindEverything: drawBelowEverything ?? this.drawBelowEverything,
+    );
+  }
+
+  /// Used for equality check, see [EquatableMixin].
+  @override
+  List<Object?> get props => [
+        axisNameWidget,
+        axisNameSize,
+        sideTitles,
+        drawBelowEverything,
+      ];
+}
+
+/// Holds data for showing titles on each side of charts.
 class FlTitlesData with EquatableMixin {
   final bool show;
 
-  final SideTitles leftTitles, topTitles, rightTitles, bottomTitles;
+  final AxisTitles leftTitles, topTitles, rightTitles, bottomTitles;
 
   /// [show] determines showing or hiding all titles,
   /// [leftTitles], [topTitles], [rightTitles], [bottomTitles] defines
   /// side titles of left, top, right, bottom sides respectively.
   FlTitlesData({
     bool? show,
-    SideTitles? leftTitles,
-    SideTitles? topTitles,
-    SideTitles? rightTitles,
-    SideTitles? bottomTitles,
+    AxisTitles? leftTitles,
+    AxisTitles? topTitles,
+    AxisTitles? rightTitles,
+    AxisTitles? bottomTitles,
   })  : show = show ?? true,
-        leftTitles =
-            leftTitles ?? SideTitles(reservedSize: 40, showTitles: true),
-        topTitles = topTitles ?? SideTitles(reservedSize: 6, showTitles: true),
-        rightTitles =
-            rightTitles ?? SideTitles(reservedSize: 40, showTitles: true),
-        bottomTitles =
-            bottomTitles ?? SideTitles(reservedSize: 6, showTitles: true);
+        leftTitles = leftTitles ??
+            AxisTitles(
+              sideTitles: SideTitles(
+                reservedSize: 40,
+                showTitles: true,
+              ),
+            ),
+        topTitles = topTitles ??
+            AxisTitles(
+              sideTitles: SideTitles(
+                reservedSize: 6,
+                showTitles: true,
+              ),
+            ),
+        rightTitles = rightTitles ??
+            AxisTitles(
+              sideTitles: SideTitles(
+                reservedSize: 40,
+                showTitles: true,
+              ),
+            ),
+        bottomTitles = bottomTitles ??
+            AxisTitles(
+              sideTitles: SideTitles(
+                reservedSize: 6,
+                showTitles: true,
+              ),
+            );
 
   /// Lerps a [FlTitlesData] based on [t] value, check [Tween.lerp].
   static FlTitlesData lerp(FlTitlesData a, FlTitlesData b, double t) {
     return FlTitlesData(
       show: b.show,
-      leftTitles: SideTitles.lerp(a.leftTitles, b.leftTitles, t),
-      rightTitles: SideTitles.lerp(a.rightTitles, b.rightTitles, t),
-      bottomTitles: SideTitles.lerp(a.bottomTitles, b.bottomTitles, t),
-      topTitles: SideTitles.lerp(a.topTitles, b.topTitles, t),
+      leftTitles: AxisTitles.lerp(a.leftTitles, b.leftTitles, t),
+      rightTitles: AxisTitles.lerp(a.rightTitles, b.rightTitles, t),
+      bottomTitles: AxisTitles.lerp(a.bottomTitles, b.bottomTitles, t),
+      topTitles: AxisTitles.lerp(a.topTitles, b.topTitles, t),
     );
   }
 
@@ -278,10 +300,10 @@ class FlTitlesData with EquatableMixin {
   /// and replaces provided values.
   FlTitlesData copyWith({
     bool? show,
-    SideTitles? leftTitles,
-    SideTitles? topTitles,
-    SideTitles? rightTitles,
-    SideTitles? bottomTitles,
+    AxisTitles? leftTitles,
+    AxisTitles? topTitles,
+    AxisTitles? rightTitles,
+    AxisTitles? bottomTitles,
   }) {
     return FlTitlesData(
       show: show ?? this.show,
@@ -300,137 +322,6 @@ class FlTitlesData with EquatableMixin {
         topTitles,
         rightTitles,
         bottomTitles,
-      ];
-}
-
-/// Determines showing or hiding specified title.
-typedef CheckToShowTitle = bool Function(double minValue, double maxValue,
-    SideTitles sideTitles, double appliedInterval, double value);
-
-/// The default [SideTitles.checkToShowTitle] function (shows all titles).
-///
-/// It determines showing or not showing specific title.
-bool defaultCheckToShowTitle(double minValue, double maxValue,
-    SideTitles sideTitles, double appliedInterval, double value) {
-  return true;
-}
-
-/// Holds data for showing each side titles (a title per each axis value).
-class SideTitles with EquatableMixin {
-  final bool showTitles;
-  final GetTitleFunction getTitles;
-  final double reservedSize;
-  final GetTitleTextStyleFunction getTextStyles;
-  final TextDirection textDirection;
-  final double margin;
-  final double? interval;
-  final double rotateAngle;
-  final TextAlign textAlign;
-  final CheckToShowTitle checkToShowTitle;
-
-  /// It draws some title on all axis, per each axis value,
-  /// [showTitles] determines showing or hiding this side,
-  /// texts are depend on the axis value, you can override [getTitles],
-  /// it gives you an axis value (double value), and you should return a string.
-  ///
-  /// [reservedSize] determines how much space they needed,
-  /// [getTextStyles] determines the text style of them,
-  /// It gives you an axis value (double value), and you should return a TextStyle based on it,
-  /// It works just like [getTitles]
-  ///
-  /// [textDirection] specifies the direction of showing text.
-  /// it applies on all showing titles in this side.
-  ///
-  /// [margin] determines margin of texts from the border line,
-  ///
-  /// texts are showing with provided [interval],
-  /// or you can let it be null to be calculated using [getEfficientInterval],
-  /// also you can decide to show or not a specific title,
-  /// using [checkToShowTitle].
-  ///
-  /// you can change rotation of drawing titles using [rotateAngle].
-  SideTitles({
-    bool? showTitles,
-    GetTitleFunction? getTitles,
-    double? reservedSize,
-    GetTitleTextStyleFunction? getTextStyles,
-    TextDirection? textDirection,
-    double? margin,
-    double? interval,
-    double? rotateAngle,
-    TextAlign? textAlign,
-    CheckToShowTitle? checkToShowTitle,
-  })  : showTitles = showTitles ?? false,
-        getTitles = getTitles ?? defaultGetTitle,
-        reservedSize = reservedSize ?? 22,
-        getTextStyles = getTextStyles ?? defaultGetTitleTextStyle,
-        textDirection = textDirection ?? TextDirection.ltr,
-        margin = margin ?? 6,
-        interval = interval,
-        rotateAngle = rotateAngle ?? 0.0,
-        textAlign = textAlign ?? TextAlign.center,
-        checkToShowTitle = checkToShowTitle ?? defaultCheckToShowTitle {
-    if (interval == 0) {
-      throw ArgumentError("SideTitles.interval couldn't be zero");
-    }
-  }
-
-  /// Lerps a [SideTitles] based on [t] value, check [Tween.lerp].
-  static SideTitles lerp(SideTitles a, SideTitles b, double t) {
-    return SideTitles(
-      showTitles: b.showTitles,
-      getTitles: b.getTitles,
-      reservedSize: lerpDouble(a.reservedSize, b.reservedSize, t),
-      getTextStyles: b.getTextStyles,
-      textDirection: b.textDirection,
-      margin: lerpDouble(a.margin, b.margin, t),
-      interval: lerpDouble(a.interval, b.interval, t),
-      rotateAngle: lerpDouble(a.rotateAngle, b.rotateAngle, t),
-      textAlign: b.textAlign,
-      checkToShowTitle: b.checkToShowTitle,
-    );
-  }
-
-  /// Copies current [SideTitles] to a new [SideTitles],
-  /// and replaces provided values.
-  SideTitles copyWith({
-    bool? showTitles,
-    GetTitleFunction? getTitles,
-    double? reservedSize,
-    GetTitleTextStyleFunction? getTextStyles,
-    TextDirection? textDirection,
-    double? margin,
-    double? interval,
-    double? rotateAngle,
-    TextAlign? textAlign,
-    CheckToShowTitle? checkToShowTitle,
-  }) {
-    return SideTitles(
-      showTitles: showTitles ?? this.showTitles,
-      getTitles: getTitles ?? this.getTitles,
-      reservedSize: reservedSize ?? this.reservedSize,
-      getTextStyles: getTextStyles ?? this.getTextStyles,
-      textDirection: textDirection ?? this.textDirection,
-      margin: margin ?? this.margin,
-      interval: interval ?? this.interval,
-      rotateAngle: rotateAngle ?? this.rotateAngle,
-      textAlign: textAlign,
-      checkToShowTitle: checkToShowTitle ?? this.checkToShowTitle,
-    );
-  }
-
-  /// Used for equality check, see [EquatableMixin].
-  @override
-  List<Object?> get props => [
-        showTitles,
-        getTitles,
-        reservedSize,
-        getTextStyles,
-        margin,
-        interval,
-        rotateAngle,
-        textAlign,
-        checkToShowTitle,
       ];
 }
 
