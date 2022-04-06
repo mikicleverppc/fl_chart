@@ -170,6 +170,7 @@ abstract class AxisChartPainter<D extends AxisChartData>
 
   void _drawTargetLine(CanvasWrapper canvasWrapper, PaintHolder<D> holder) {
     final data = holder.data;
+    final viewSize = canvasWrapper.size;
     if (data.targetLine == null) {
       return;
     }
@@ -180,12 +181,13 @@ abstract class AxisChartPainter<D extends AxisChartData>
       ..style = PaintingStyle.stroke
       ..strokeWidth = flLineStyle.strokeWidth;
 
-    final drawSize = getChartUsableDrawSize(canvasWrapper.size, holder);
     canvasWrapper.save();
     canvasWrapper.translate(
-        0.0, getPixelY(data.targetLine!.dy, drawSize, holder));
+      0.0,
+      getPixelY(data.targetLine!.dy, viewSize, holder),
+    );
 
-    final _path = Path()..lineTo(drawSize.width, 0.0);
+    final _path = Path()..lineTo(viewSize.width, 0.0);
 
     canvasWrapper.drawPath(
       _path,
